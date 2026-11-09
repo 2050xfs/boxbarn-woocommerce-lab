@@ -198,7 +198,7 @@ update_option('woocommerce_cod_settings', array('enabled'=>'yes','title'=>'Cash 
 bb_log('Gateways: BACS + COD enabled');
 
 // ---------- Coupons ----------
-if (!get_page_by_title('MOVEDAY10', OBJECT, 'shop_coupon')) {
+global $wpdb; if (!$wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_title=%s AND post_type='shop_coupon'", 'MOVEDAY10'))) {
     $c = new WC_Coupon();
     $c->set_code('MOVEDAY10');
     $c->set_discount_type('percent');
@@ -209,7 +209,7 @@ if (!get_page_by_title('MOVEDAY10', OBJECT, 'shop_coupon')) {
     $c->save();
     bb_log('Coupon MOVEDAY10 created (expired on purpose)');
 }
-if (!get_page_by_title('BOXPRO5', OBJECT, 'shop_coupon')) {
+if (!$wpdb->get_var($wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE post_title=%s AND post_type='shop_coupon'", 'BOXPRO5'))) {
     $c2 = new WC_Coupon();
     $c2->set_code('BOXPRO5');
     $c2->set_discount_type('fixed_cart');
@@ -232,8 +232,9 @@ foreach (array(array('maria.test@example.com','Maria','Tester'), array('james.te
 
 // ---------- Test orders in different statuses ----------
 function bb_order($email, $sku_qty, $status, $note){
-    $existing = wc_get_orders(array('billing_email'=>$email, 'limit'=>1, 'customer_note'=>$note));
-    if (!empty($existing)) { bb_log('order exists for '.$note); return; }
+    foreach (wc_get_orders(array('billing_email'=>$email, 'limit'=>-1)) as $eo) {
+        if ($eo->get_customer_note() === $note) { bb_log('order exists for '.$note); return; }
+    }
     $order = wc_create_order();
     $user = get_user_by('email', $email);
     if ($user) $order->set_customer_id($user->ID);
