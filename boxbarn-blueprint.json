@@ -35,6 +35,10 @@
    }
   },
   {
+   "step": "mkdir",
+   "path": "/wordpress/wp-content/plugins/boxbarn-seed"
+  },
+  {
    "step": "writeFile",
    "path": "/wordpress/wp-content/plugins/boxbarn-seed/boxbarn-seed.php",
    "data": "<?php\n/**\n * Plugin Name:       Box Barn Seed\n * Description:       One-time seeder for the Box Barn WooCommerce lab. Runs the store build (products, tax, shipping, coupons, customers, orders) on the first request after WooCommerce is active, records its log in an option, and never runs again. Safe to delete after seeding.\n * Version:           1.0.0\n * Requires Plugins:  woocommerce\n */\n\nif (!defined('ABSPATH')) { exit; }\n\nadd_action('init', 'boxbarn_seed_maybe_run', 99);\n\nfunction boxbarn_seed_maybe_run() {\n    if (get_option('boxbarn_seeded')) { return; }\n    if (!class_exists('WooCommerce')) { return; }\n\n    // Claim the run before doing work so parallel requests cannot double-seed.\n    update_option('boxbarn_seeded', 'running');\n\n    $GLOBALS['bb_seed_log'] = array();\n    try {\n        include __DIR__ . '/seed-body.php';\n        update_option('boxbarn_seed_log', $GLOBALS['bb_seed_log']);\n        update_option('boxbarn_seeded', 'done');\n    } catch (Throwable $e) {\n        update_option('boxbarn_seed_log', $GLOBALS['bb_seed_log']);\n        update_option('boxbarn_seed_error', $e->getMessage() . ' @ ' . $e->getFile() . ':' . $e->getLine());\n        update_option('boxbarn_seeded', 'failed');\n    }\n}\n\nadd_action('admin_notices', 'boxbarn_seed_notice');\nfunction boxbarn_seed_notice() {\n    $state = get_option('boxbarn_seeded');\n    if ($state === 'done') {\n        echo '<div class=\"notice notice-success\"><p><strong>Box Barn Seed:</strong> store seeded. Products, tax, shipping, coupons, customers and orders are in. This plugin can be deleted now.</p></div>';\n    } elseif ($state === 'failed') {\n        echo '<div class=\"notice notice-error\"><p><strong>Box Barn Seed FAILED:</strong> ' . esc_html(get_option('boxbarn_seed_error')) . '</p></div>';\n    }\n}\n"
