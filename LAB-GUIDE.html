@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Box Barn - WooCommerce Lab Guide</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px 16px 60px;background:#F7F8FA;color:#293241;line-height:1.55;font-size:16px}
+  .wrap{max-width:720px;margin:0 auto}
+  h1{font-size:26px;margin:0 0 4px}
+  h2{font-size:20px;margin:28px 0 8px;border-bottom:3px solid #EE6C4D;padding-bottom:4px}
+  h3{font-size:17px;margin:18px 0 4px}
+  .sub{color:#5b6675;margin:0 0 16px}
+  .card{background:#fff;border:1px solid #e2e6ec;border-radius:10px;padding:14px 16px;margin:12px 0;box-shadow:2px 2px 0 #293241}
+  .ticket{border-left:6px solid #EE6C4D}
+  .tag{display:inline-block;background:#293241;color:#fff;font-size:12px;padding:2px 8px;border-radius:99px;margin-right:6px}
+  code{background:#eef1f5;padding:1px 5px;border-radius:4px;font-size:14px}
+  pre{background:#293241;color:#d7f9ff;padding:12px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.45}
+  a.btn{display:block;background:#EE6C4D;color:#fff;text-align:center;padding:14px;border-radius:10px;font-weight:700;text-decoration:none;margin:14px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  td,th{border-bottom:1px solid #e2e6ec;padding:6px 4px;text-align:left;vertical-align:top}
+  .small{font-size:13px;color:#5b6675}
+  ul{padding-left:20px} li{margin:4px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Box Barn - WooCommerce Lab</h1>
+<p class="sub">A fake store that sells boxes, built on a real WordPress + WooCommerce 11.2 install. Every product type, shipping zone, tax rule, and order status a working store uses - plus three things deliberately broken for you to fix.</p>
+
+<a class="btn" href="https://playground.wordpress.net/?blueprint-url=https%3A%2F%2Fraw.githubusercontent.com%2F2050xfs%2Fboxbarn-woocommerce-lab%2Fmain%2Fboxbarn-blueprint.json">Open your own clickable copy (WordPress Playground)</a>
+<p class="small">That link builds the same store in your phone browser - real WP Admin, real WooCommerce. Login is automatic (admin / password). Nothing you break there matters; reload and it resets. The blueprint now lives on GitHub (permanent, no expiry) in the repo 2050xfs/boxbarn-woocommerce-lab; a copy is also saved in <code>~/workspace/woocommerce-lab/</code>, and I can re-host it anytime. The master copy runs on my machine for WP-CLI drills we do together.</p>
+
+<h2>The store at a glance</h2>
+<div class="card">
+<table>
+<tr><th>Piece</th><th>What's set up</th></tr>
+<tr><td>Products (10)</td><td>Simple, <b>variable</b> (Moving Box in 4 sizes, per-size price/weight/dimensions/stock), <b>grouped</b> (Starter Moving Kit), <b>virtual + downloadable</b> (printable labels), a sale item, a low-stock item, a backorder item</td></tr>
+<tr><td>Categories</td><td>Moving Boxes, Shipping Boxes, Storage &amp; Wardrobe, Packing Supplies, Moving Kits</td></tr>
+<tr><td>Tax</td><td>Texas 8.25%, prices exclude tax, tax applies to shipping</td></tr>
+<tr><td>Shipping zones</td><td>Texas: flat $6.95, free over $75, local pickup $0. Rest of US: flat $12.95</td></tr>
+<tr><td>Payments</td><td>Direct bank transfer + Cash on delivery (offline gateways - the pattern most small stores start with)</td></tr>
+<tr><td>Coupons</td><td>BOXPRO5: $5 off $50+ (healthy). MOVEDAY10: 10% off (see Ticket 1)</td></tr>
+<tr><td>Orders</td><td>#26 completed, #27 processing, #28 on-hold - the three statuses you will touch daily</td></tr>
+<tr><td>Customers</td><td>2 test customers with order history</td></tr>
+</table>
+</div>
+
+<h2>Start here: 3 live tickets</h2>
+<p>These are written the way a client or boss actually reports them. Symptoms only. Fix each one in your Playground copy, then check yourself against the fix path under it (try first, peek second).</p>
+
+<div class="card ticket">
+<h3>Ticket 1 - "Our promo code doesn't work"</h3>
+<p><span class="tag">Coupons</span> A customer says MOVEDAY10 gives an error at checkout and the sale ends this week. The owner swears the coupon was set up right.</p>
+<p class="small"><b>Fix path:</b> WooCommerce &gt; Coupons &gt; MOVEDAY10. Check the expiry date before anything else - it expired yesterday. Coupons fail silently into a generic "coupon is not valid" message, so expiry, usage limits, and minimum spend are the first three checks, in that order. Extend the date and test at checkout with a real cart.</p>
+</div>
+
+<div class="card ticket">
+<h3>Ticket 2 - "Customers can't buy the X-Large box"</h3>
+<p><span class="tag">Variable products</span> On "Moving Box - Choose Your Size," Small through Large add to cart fine. X-Large shows no price and cannot be purchased. The product page itself looks normal.</p>
+<p class="small"><b>Fix path:</b> Products &gt; Moving Box &gt; Variations &gt; X-Large. Its price field is empty. A variation with no price is treated as not purchasable, and WooCommerce does not flag it anywhere obvious - you find it by opening the variation. Set $7.99, save, and confirm the front end now shows a price when X-Large is selected.</p>
+</div>
+
+<div class="card ticket">
+<h3>Ticket 3 - "The tape fell off the website"</h3>
+<p><span class="tag">Visibility</span> Packing Tape - 6 Pack exists in the product list and its direct link works, but it does not appear in the shop or its category, and search can't find it.</p>
+<p class="small"><b>Fix path:</b> Products &gt; Packing Tape &gt; Catalog visibility (right sidebar in the editor). It is set to <b>Hidden</b>. Hidden = direct link only, excluded from shop, category, and search. Set it back to "Shop and search results." The direct link working is the tell: deleted or draft products 404, hidden ones still load.</p>
+</div>
+
+<h2>Next drills (do in Playground, break it freely)</h2>
+<div class="card">
+<h3>Drill 4 - Shipping math</h3>
+<p>Build a Texas cart at $74.99 and one at $75.00. Watch the free-shipping method appear exactly at the threshold, and the flat rate disappear. Then change the threshold to $50 in the zone settings and re-test. This is how you verify a "free shipping is broken" complaint instead of guessing.</p>
+<h3>Drill 5 - Order lifecycle</h3>
+<p>Take order #28 (on-hold, bank transfer). Mark the payment received the way a store does: change status to Processing, add an order note, then complete it. Watch stock levels and the customer email log change at each step.</p>
+<h3>Drill 6 - "Store emails aren't sending"</h3>
+<p>The master lab's server has no mail transport, so order emails fail silently - the most common WooCommerce ticket there is. In Playground, install a mail-logging plugin and place a test order to see what the log proves. On a real store the fix is an SMTP plugin with an authenticated domain, and the log is how you prove it works.</p>
+<h3>Drill 7 - Sale scheduling</h3>
+<p>The Bubble Cushion Roll is on sale with no end date. Set a sale schedule (dates in the product's Pricing section), then schedule a future sale on the Wardrobe Box and confirm it does NOT show early.</p>
+<h3>Drill 8 - Low stock and backorders</h3>
+<p>The Furniture Blanket has 3 left (low-stock threshold is 5). Find where WooCommerce flags it in admin. Then place the Dish Pack (stock 0, backorders on) in a cart and see how the storefront warns the customer before checkout, not after.</p>
+<h3>Drill 9 - Kill the store, then revive it</h3>
+<p>Deactivate WooCommerce, look at the site, reactivate. Then activate a second page-builder plugin and check the shop layout. Plugin-conflict isolation - deactivate half, test, repeat - is the core troubleshooting method for "the update broke my store."</p>
+<h3>Drill 10 - System status before opinions</h3>
+<p>WooCommerce &gt; Status. Read the whole page: PHP version, memory limit, database, active plugins, theme. Pros check this page before touching anything. The build log for this lab (in the lab folder) shows 7 real issues diagnosed this way.</p>
+</div>
+
+<h2>The WooCommerce map (what the job actually is)</h2>
+<div class="card">
+<ul>
+<li><b>Products are 4 jobs:</b> simple, variable (attributes + variations), grouped, virtual/downloadable. If you can build all four, you can build any catalog.</li>
+<li><b>Money has 3 layers:</b> tax rules, shipping zones/methods, payment gateways. Most "checkout is broken" tickets live in one of these three.</li>
+<li><b>Orders are a pipeline:</b> Pending &gt; On-hold / Processing &gt; Completed, with Failed and Refunded off to the side. Status changes drive emails and stock.</li>
+<li><b>Coupons fail for boring reasons:</b> expiry, usage limits, min/max spend, product exclusions - in that order.</li>
+<li><b>Visibility has 4 states:</b> published, draft, private, hidden catalog. A product can be "gone" without being deleted.</li>
+<li><b>Status page first.</b> WooCommerce &gt; Status and Tools (transients, logs, recount stock) before any deep debugging.</li>
+</ul>
+</div>
+
+<h2>WP-CLI cheat sheet (we run these together on the master lab)</h2>
+<pre>wp wc product list --user=1
+wp wc product get &lt;id&gt; --user=1
+wp wc shop_order list --user=1
+wp wc shop_coupon list --user=1
+wp wc shipping_zone list --user=1
+wp plugin list
+wp wc system_status get --user=1   (via REST on newer versions)</pre>
+<p class="small">Honest framing for interviews stays the same: this lab is practice you built and can demonstrate - walk them through the store, the tickets, and the troubleshooting log. It does not retroactively become years of client WooCommerce work, and you do not need it to: the talking point is "here is a store I built and the issues I diagnosed in it," with receipts.</p>
+
+</div>
+</body>
+</html>
